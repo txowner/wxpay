@@ -386,3 +386,19 @@ func (c *Client) AuthCodeToOpenid(params Params) (Params, error) {
 	}
 	return c.processResponseXml(xmlStr)
 }
+
+// 转账到个人open id
+func (c *Client) Transfer(params Params) (Params, error) {
+	var url string
+	if c.account.isSandbox {
+		url = SandboxTransferOpenidUrl
+	} else {
+		url = TransferOpenidUrl
+	}
+	xmlStr, err := c.postWithCert(url, params)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.processResponseXml(xmlStr)
+}

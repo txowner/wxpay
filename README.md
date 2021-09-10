@@ -13,6 +13,7 @@ wxpay 提供了以下的方法：
 | Reverse          | 撤销订单        |
 | CloseOrder       | 关闭订单        |
 | Refund           | 申请退款        |
+| Transfer         | 转账到个人       |
 | RefundQuery      | 查询退款        |
 | DownloadBill     | 下载对账单       |
 | Report           | 交易保障        |
