@@ -387,6 +387,46 @@ func (c *Client) AuthCodeToOpenid(params Params) (Params, error) {
 	return c.processResponseXml(xmlStr)
 }
 
+// 为了商户转账实现
+// 向 params 中添加 mch_appid、mchid、nonce_str、sign
+func (c *Client) fillRequestDataForTransfer(params Params) Params {
+	params["mch_appid"] = c.account.appID
+	params["mchid"] = c.account.mchID
+	params["nonce_str"] = nonceStr()
+	params["sign"] = c.Sign(params)
+	return params
+}
+
+// https need cert post
+func (c *Client) postWithCertForTransfer(url string, params Params) (string, error) {
+	if c.account.certData == nil {
+		return "", errors.New("证书数据为空")
+	}
+
+	// 将pkcs12证书转成pem
+	cert := pkcs12ToPem(c.account.certData, c.account.mchID)
+
+	config := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+	}
+	transport := &http.Transport{
+		TLSClientConfig:    config,
+		DisableCompression: true,
+	}
+	h := &http.Client{Transport: transport}
+	p := c.fillRequestDataForTransfer(params)
+	response, err := h.Post(url, bodyType, strings.NewReader(MapToXml(p)))
+	if err != nil {
+		return "", err
+	}
+	defer response.Body.Close()
+	res, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(res), nil
+}
+
 // 转账到个人open id
 func (c *Client) Transfer(params Params) (Params, error) {
 	var url string
@@ -395,7 +435,7 @@ func (c *Client) Transfer(params Params) (Params, error) {
 	} else {
 		url = TransferOpenidUrl
 	}
-	xmlStr, err := c.postWithCert(url, params)
+	xmlStr, err := c.postWithCertForTransfer(url, params)
 	if err != nil {
 		return nil, err
 	}
