@@ -440,5 +440,5 @@ func (c *Client) Transfer(params Params) (Params, error) {
 		return nil, err
 	}
 
-	return c.processResponseXml(xmlStr)
+	return XmlToMap(xmlStr), nil
 }
